@@ -220,6 +220,30 @@ class Map implements IteratorAggregate
     }
 
     /**
+     * Sort the routes, the longest absolute path first - ignore all the params
+     */
+    public function sort()
+    {
+        $tmpRoutes = [];
+        foreach ($this->routes as $route) {
+            $path = $this->removeParamFromPath($route->path);
+            $key = '' . strlen($path);
+            while (array_key_exists($key, $tmpRoutes)) {
+                $key = 0.01 + floatval($key);
+                $key = (string) $key;
+            }
+            $tmpRoutes[$key] = $route;
+        }
+        unset($route);
+        $this->routes = [];
+        ksort($tmpRoutes);
+        $tmpRoutes = array_reverse($tmpRoutes);
+        foreach ($tmpRoutes as $tmpRoute) {
+            $this->routes[$tmpRoute->__get('name')] = $tmpRoute;
+        }
+    }
+
+    /**
      *
      * Adds a GET route.
      *
@@ -419,5 +443,26 @@ class Map implements IteratorAggregate
         // run the callable and restore the old prototype
         $callable($this);
         $this->protoRoute = $old;
+    }
+
+    public function removeParamFromPath($path)
+    {
+        $start = strpos($path, '{');
+        $end = strpos($path, '}');
+        $cleaned = '';
+
+        if ($start !== false) {
+            $cleaned = substr($path, 0, $start);
+            $cleaned .= substr($path, $end + 1);
+        }
+
+        if (empty($cleaned)) {
+            return $path;
+        }
+
+        if (strpos($cleaned, '{') !== false) {
+            return $this->removeParamFromPath($cleaned);
+        }
+        return $cleaned;
     }
 }
