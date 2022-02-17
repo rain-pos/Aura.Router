@@ -137,4 +137,52 @@ class MapTest extends TestCase
         $this->assertIsRoute($actual['page.read']);
         $this->assertEquals('/page/{id}{format}', $actual['page.read']->path);
     }
+
+    public function testSort()
+    {
+        $container = new RouterContainer();
+        $map = $container->getMap();
+
+        $map->route('Account', '/api/account/{/t}')
+            ->auth(4)
+            ->allows(['GET'])
+            ->wildcard('other');
+
+        $map->route('Override', 'api/account/override')
+            ->auth(1)
+            ->allows(['GET'])
+            ->wildcard('other');
+
+        // Routes should be in the order they were added
+        $routes = $map->getRoutes();
+        $keys = array_keys($routes);
+        $this->assertEquals('Account', $keys[0]);
+        $this->assertEquals('Override', $keys[1]);
+
+        // Routes should be sorted so longer ones are first
+        $map->sort();
+        $routes = $map->getRoutes();
+        $keys = array_keys($routes);
+        $this->assertEquals('Override', $keys[0]);
+        $this->assertEquals('Account', $keys[1]);
+    }
+
+    public function testCleanPath()
+    {
+        $container = new RouterContainer();
+        $map = $container->getMap();
+
+        $path = '/';
+        $this->assertEquals('/', $map->removeParamFromPath($path));
+
+        $path = '/account/foo/{bar}/baz';
+        $this->assertEquals('/account/foo//baz', $map->removeParamFromPath($path));
+
+        $path = '/account/foo{/bar}';
+        $this->assertEquals('/account/foo', $map->removeParamFromPath($path));
+
+        $path = '/{foo}/bar/baz';
+        $this->assertEquals('//bar/baz', $map->removeParamFromPath($path));
+
+    }
 }
