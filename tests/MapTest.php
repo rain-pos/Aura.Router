@@ -166,4 +166,23 @@ class MapTest extends TestCase
         $this->assertEquals('Override', $keys[0]);
         $this->assertEquals('Account', $keys[1]);
     }
+
+    public function testCleanPath()
+    {
+        $container = new RouterContainer();
+        $map = $container->getMap();
+
+        $path = '/';
+        $this->assertEquals('/', $map->removeParamFromPath($path));
+
+        $path = '/account/foo/{bar}/baz';
+        $this->assertEquals('/account/foo//baz', $map->removeParamFromPath($path));
+
+        $path = '/account/foo{/bar}';
+        $this->assertEquals('/account/foo', $map->removeParamFromPath($path));
+
+        $path = '/{foo}/bar/baz';
+        $this->assertEquals('//bar/baz', $map->removeParamFromPath($path));
+
+    }
 }
